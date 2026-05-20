@@ -6,15 +6,15 @@
 
 User::User() : authorized(false), subscriptionEnd(0) {}
 
-void User::registerUser(const std::string& login, const std::string& password) {
+void User::registerUser(const std::string& login, const std::string& passwordHash) {
     this->login = login;
-    this->password = password;
+    this->passwordHash = passwordHash;
     authorized = true;
     subscriptionEnd = 0;
 }
 
-void User::loginUser(const std::string& login, const std::string& password) {
-    if (this->login == login && this->password == password) {
+void User::loginUser(const std::string& login, const std::string& passwordHash) {
+    if (this->login == login && this->passwordHash == passwordHash) {
         authorized = true;
     }
 }
@@ -61,6 +61,18 @@ std::string User::getLogin() const {
     return login;
 }
 
+std::time_t User::getSubscriptionEnd() const {
+    return subscriptionEnd;
+}
+
+std::string User::getPasswordHash() const {
+    return passwordHash;
+}
+
+void User::setSubscriptionEnd(std::time_t end) {
+    subscriptionEnd = end;
+}
+
 bool User::isAuthorized() const {
     return authorized;
 }
@@ -74,9 +86,10 @@ bool User::hasSubscription() const {
 
 Administrator::Administrator() {}
 
-void Administrator::addFilm(Catalog& catalog, const std::string& title, const std::string& genre, int year, const std::string& metadata) {
+void Administrator::addFilm(Catalog& catalog, const std::string& title, const std::string& genre,
+    int year, const std::string& metadata, const std::string& isan) {
     int id = catalog.getAllFilms().size() + 1;
-    catalog.addFilm(Film(id, title, genre, year, metadata));
+    catalog.addFilm(Film(id, title, genre, year, metadata, isan));
 }
 
 void Administrator::removeFilm(Catalog& catalog, const std::string& title, int idToRemove) {
@@ -95,10 +108,11 @@ void Administrator::changeFilmAccess(Catalog& catalog, const std::string& title,
 Film::Film() : id(0), rating(0.0), accessible(true), year(0) {}
 
 Film::Film(int id, const std::string& title, const std::string& genre, int year,
-    const std::string& metadata)
+    const std::string& metadata, const std::string& isan)
     : id(id), title(title), genre(genre), year(year), rating(0.0),
-    accessible(true), metadata(metadata) {}
+    accessible(true), metadata(metadata), isan(isan) {}
 
+std::string Film::getIsan() const { return isan; }
 int Film::getId() const { return id; }
 std::string Film::getTitle() const { return title; }
 std::string Film::getGenre() const { return genre; }
@@ -153,12 +167,47 @@ void Catalog::removeFilmById(int id) {
 
 std::vector<Film*> Catalog::findFilms(const std::string& title) {
     std::vector<Film*> result;
+    std::string titleLower = title;
+    for (char& c : titleLower) c = std::tolower(c);
+
     for (auto& film : films) {
-        if (film.getTitle() == title) {
+        std::string filmTitleLower = film.getTitle();
+        for (char& c : filmTitleLower) c = std::tolower(c);
+
+        if (filmTitleLower == titleLower) {
             result.push_back(&film);
         }
     }
     return result;
+}
+
+std::vector<Film*> Catalog::findFilmsByGenre(const std::string& genre) {
+    std::vector<Film*> result;
+    for (auto& film : films) {
+        if (film.getGenre() == genre) {
+            result.push_back(&film);
+        }
+    }
+    return result;
+}
+
+std::vector<Film*> Catalog::findFilmsByYear(int year) {
+    std::vector<Film*> result;
+    for (auto& film : films) {
+        if (film.getYear() == year) {
+            result.push_back(&film);
+        }
+    }
+    return result;
+}
+
+Film* Catalog::findFilmByIsan(const std::string& isan) {
+    for (auto& film : films) {
+        if (film.getIsan() == isan) {
+            return &film;
+        }
+    }
+    return nullptr;
 }
 
 Film* Catalog::getFilmById(int id) {
