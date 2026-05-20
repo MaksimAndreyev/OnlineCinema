@@ -5,3 +5,6 @@ ConsoleApplication1.vcxproj
 ConsoleApplication1.vcxproj.filters
 ConsoleApplication1.vcxproj.user
 x64/
+users/
+films/
+data/
